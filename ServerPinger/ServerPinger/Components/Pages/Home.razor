@@ -1,0 +1,77 @@
+﻿@page "/"
+@attribute [StreamRendering]
+
+<PageTitle>Server Pinger</PageTitle>
+
+<h1>Server List</h1>
+@if (servers == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Server Name</th>
+                <th>IP Address</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var server in servers)
+            {
+                <tr>
+                    <td>@server.Name</td>
+                    <td>@server.IPAddress</td>
+                    <td>@server.Status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Server[]? servers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate asynchronous loading to demonstrate streaming rendering
+        await Task.Delay(500);
+
+        servers = new Server[]
+        {
+            new Server
+            {
+                Name = "Mt. Olympus",
+                IPAddress = "10.0.0.10",
+                Status = "Loading..."
+            },
+            new Server
+            {
+                Name = "Unifi Controller",
+                IPAddress = "10.0.0.21",
+                Status = "Loading..."
+            }
+        };
+
+        foreach (var server in servers)
+        {
+            server.Status = await PingServer(server.IPAddress);
+        }
+    }
+
+    private class Server
+    {
+        public string Name { get; set; }
+        public string IPAddress { get; set; }
+        public string Status { get; set; }
+    }
+
+    private async Task<string> PingServer(string ipAddress)
+    {
+        // Simulate pinging the server
+        await Task.Delay(1000);
+        return "Online"; // or "Offline" based on actual ping result
+    }
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "Name": "Mt. Olympus",
+    "IPAddress": "10.0.0.10",
+    "Status": "Loading..."
+  },
+  {
+    "Name": "Unifi Controller",
+    "IPAddress": "10.0.0.21",
+    "Status": "Loading..."
+  },
+  {
+    "Name": "Test",
+    "IPAddress": "10.0.0.2",
+    "Status": "Loading..."
+  },
+  {
+    "Name": "Google",
+    "IPAddress": "8.8.8.8",
+    "Status": "Loading..."
+  }
+]

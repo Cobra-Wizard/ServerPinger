@@ -34,41 +34,21 @@ else
         </tbody>
     </table>
 }
+<h2>Add New Server</h2>
+<div class="input-group mb-3">
+    <input type="text" class="form-control" placeholder="Server Name" @bind="newServer.Name" />
+    <input type="text" class="form-control" placeholder="IP Address" @bind="newServer.IPAddress" />
+    <button class="btn btn-success" @onclick="AddServer">Add Server</button>
+</div>
 
 @code {
     private Server[]? servers;
     private DateTime lastChecked = DateTime.Now;
+    private Server newServer = new Server();
 
     protected override async Task OnInitializedAsync()
     {
-        servers = new Server[]
-        {
-            new Server
-            {
-                Name = "Mt. Olympus",
-                IPAddress = "10.0.0.10",
-                Status = "Loading..."
-            },
-            new Server
-            {
-                Name = "Unifi Controller",
-                IPAddress = "10.0.0.21",
-                Status = "Loading..."
-            },
-            new Server
-            {
-                Name = "Test",
-                IPAddress = "10.0.0.2",
-                Status = "Loading..."
-            },
-            new Server
-            {
-                Name = "Google",
-                IPAddress = "8.8.8.8",
-                Status = "Loading..."
-            }
-        };
-
+        servers = await LoadServersFromFileAsync("servers.json");
         await UpdateServerStatuses();
     }
 
@@ -117,7 +97,7 @@ else
             {
                 var startTime = DateTime.Now;
 
-                server.Status = await PingServer(server.IPAddress);
+                server.Status = await PingServer(server.IPAddress ?? string.Empty);
 
                 if (server.Status == "Online")
                 {
@@ -138,5 +118,35 @@ else
     private string GetRowClass(string status)
     {
         return status == "Offline" ? "table-danger" : string.Empty;
+    }
+
+    private async Task<Server[]> LoadServersFromFileAsync(string filePath)
+    {
+        if (!System.IO.File.Exists(filePath))
+        {
+            var defaultServers = Array.Empty<Server>();
+            var json = System.Text.Json.JsonSerializer.Serialize(defaultServers);
+            await System.IO.File.WriteAllTextAsync(filePath, json);
+            return defaultServers;
+        }
+
+        var fileContent = await System.IO.File.ReadAllTextAsync(filePath);
+        return System.Text.Json.JsonSerializer.Deserialize<Server[]>(fileContent) ?? Array.Empty<Server>();
+    }
+
+    private async Task AddServer()
+    {
+        if (servers != null && !string.IsNullOrWhiteSpace(newServer.Name) && !string.IsNullOrWhiteSpace(newServer.IPAddress))
+        {
+            var serverList = servers.ToList();
+            serverList.Add(newServer);
+            servers = serverList.ToArray();
+
+            var json = System.Text.Json.JsonSerializer.Serialize(servers);
+            await System.IO.File.WriteAllTextAsync("servers.json", json);
+
+            newServer = new Server();
+            await UpdateServerStatuses();
+        }
     }
 }

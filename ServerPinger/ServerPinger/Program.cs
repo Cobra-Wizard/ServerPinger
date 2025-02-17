@@ -1,4 +1,4 @@
-using ServerPinger.Client.Pages;
+//using ServerPinger.Client.Pages;
 using ServerPinger.Components;
 
 var builder = WebApplication.CreateBuilder(args);

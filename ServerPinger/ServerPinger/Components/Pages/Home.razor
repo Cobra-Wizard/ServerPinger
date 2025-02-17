@@ -4,6 +4,8 @@
 <PageTitle>Server Pinger</PageTitle>
 
 <h1>Server List</h1>
+<pre>Last Checked: @lastChecked.ToString("f")</pre>
+<button class="btn btn-primary" @onclick="Reload">Check Servers</button>
 @if (servers == null)
 {
     <p><em>Loading...</em></p>
@@ -16,15 +18,17 @@ else
                 <th>Server Name</th>
                 <th>IP Address</th>
                 <th>Status</th>
+                <th>Response Time</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var server in servers)
             {
-                <tr>
+                <tr class="@GetRowClass(server.Status)">
                     <td>@server.Name</td>
                     <td>@server.IPAddress</td>
                     <td>@server.Status</td>
+                    <td>@server.ResponseTime</td>
                 </tr>
             }
         </tbody>
@@ -33,12 +37,10 @@ else
 
 @code {
     private Server[]? servers;
+    private DateTime lastChecked = DateTime.Now;
 
     protected override async Task OnInitializedAsync()
     {
-        // Simulate asynchronous loading to demonstrate streaming rendering
-        await Task.Delay(500);
-
         servers = new Server[]
         {
             new Server
@@ -52,26 +54,89 @@ else
                 Name = "Unifi Controller",
                 IPAddress = "10.0.0.21",
                 Status = "Loading..."
+            },
+            new Server
+            {
+                Name = "Test",
+                IPAddress = "10.0.0.2",
+                Status = "Loading..."
+            },
+            new Server
+            {
+                Name = "Google",
+                IPAddress = "8.8.8.8",
+                Status = "Loading..."
             }
         };
 
-        foreach (var server in servers)
-        {
-            server.Status = await PingServer(server.IPAddress);
-        }
+        await UpdateServerStatuses();
     }
 
     private class Server
     {
-        public string Name { get; set; }
-        public string IPAddress { get; set; }
-        public string Status { get; set; }
+        public string? Name { get; set; }
+        public string? IPAddress { get; set; }
+        public string? Status { get; set; }
+        public string? ResponseTime { get; set; }
     }
 
     private async Task<string> PingServer(string ipAddress)
     {
-        // Simulate pinging the server
-        await Task.Delay(1000);
-        return "Online"; // or "Offline" based on actual ping result
+        try
+        {
+            using var ping = new System.Net.NetworkInformation.Ping();
+            var reply = await ping.SendPingAsync(ipAddress, 1000);
+            return reply.Status == System.Net.NetworkInformation.IPStatus.Success ? "Online" : "Offline";
+        }
+        catch
+        {
+            return "Unable to ping";
+        }
+    }
+
+    private async Task Reload()
+    {
+        if (servers != null)
+        {
+            foreach (var server in servers)
+            {
+                server.Status = "Loading...";
+            }
+            
+            StateHasChanged();
+
+            await UpdateServerStatuses();
+        }
+    }
+
+    private async Task UpdateServerStatuses()
+    {
+        if (servers != null)
+        {
+            foreach (var server in servers)
+            {
+                var startTime = DateTime.Now;
+
+                server.Status = await PingServer(server.IPAddress);
+
+                if (server.Status == "Online")
+                {
+                    server.ResponseTime = Math.Round((DateTime.Now - startTime).TotalMilliseconds) + "ms";
+                }
+                else
+                {
+                    server.ResponseTime = "N/A";
+                }
+            }
+
+            lastChecked = DateTime.Now;
+
+            StateHasChanged();
+        }
+    }
+
+    private string GetRowClass(string status)
+    {
+        return status == "Offline" ? "table-danger" : string.Empty;
     }
 }

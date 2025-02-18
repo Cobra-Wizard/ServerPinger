@@ -40,11 +40,16 @@ else
     <input type="text" class="form-control" placeholder="IP Address" @bind="newServer.IPAddress" />
     <button class="btn btn-success" @onclick="AddServer">Add Server</button>
 </div>
+@if (!string.IsNullOrEmpty(validationMessage))
+{
+    <div class="alert alert-danger">@validationMessage</div>
+}
 
 @code {
     private Server[]? servers;
     private DateTime lastChecked = DateTime.Now;
     private Server newServer = new Server();
+    private string? validationMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -83,7 +88,7 @@ else
                 server.Status = "Loading...";
             }
             
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
 
             await UpdateServerStatuses();
         }
@@ -111,7 +116,7 @@ else
 
             lastChecked = DateTime.Now;
 
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -136,7 +141,13 @@ else
 
     private async Task AddServer()
     {
-        if (servers != null && !string.IsNullOrWhiteSpace(newServer.Name) && !string.IsNullOrWhiteSpace(newServer.IPAddress))
+        if (string.IsNullOrWhiteSpace(newServer.Name) || string.IsNullOrWhiteSpace(newServer.IPAddress))
+        {
+            validationMessage = "Both Server Name and IP Address are required.";
+            return;
+        }
+
+        if (servers != null)
         {
             var serverList = servers.ToList();
             serverList.Add(newServer);
@@ -146,8 +157,9 @@ else
             await System.IO.File.WriteAllTextAsync("servers.json", json);
 
             newServer = new Server();
+            validationMessage = null;
             await UpdateServerStatuses();
-            StateHasChanged(); // Ensure the UI updates after adding a new server
+            await InvokeAsync(StateHasChanged); // Ensure the UI updates after adding a new server
         }
     }
 }

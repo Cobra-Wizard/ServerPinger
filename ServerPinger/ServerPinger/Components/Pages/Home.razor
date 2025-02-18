@@ -147,6 +147,7 @@ else
 
             newServer = new Server();
             await UpdateServerStatuses();
+            StateHasChanged(); // Ensure the UI updates after adding a new server
         }
     }
 }
